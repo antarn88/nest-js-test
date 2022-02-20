@@ -1,18 +1,28 @@
-/* eslint-disable prettier/prettier */
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+} from '@nestjs/common';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './user.schema';
 import { UserService } from './user.service';
 
 @Controller('users')
+@ApiTags('users')
 export class UserController {
-
-  constructor(
-    private readonly userService: UserService,
-  ) { }
+  // eslint-disable-next-line prettier/prettier
+  constructor(private readonly userService: UserService) { }
 
   @Post()
-  create(@Body() user: User): Promise<User> {
-    return this.userService.create(user);
+  // eslint-disable-next-line prettier/prettier
+  async create(@Body() user: User): Promise<{ _id: string; }> {
+    const cretedUser = await this.userService.create(user);
+    return { _id: cretedUser._id };
   }
 
   @Get()
@@ -21,18 +31,28 @@ export class UserController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<User> {
+  @ApiResponse({ status: 404, description: 'Not found.' })
+  async findOne(@Param('id') id: string): Promise<User> {
+    const user = await this.userService.findOne(id);
+    if (!user) {
+      throw new NotFoundException();
+    }
     return this.userService.findOne(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() user: User): Promise<User> {
-    return this.userService.update(id, user);
+  @ApiResponse({ status: 404, description: 'Not found.' })
+  async update(@Param('id') id: string, @Body() user: User): Promise<string> {
+    await this.findOne(id);
+    await this.userService.update(id, user);
+    return '';
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<User> {
-    return this.userService.delete(id);
+  @ApiResponse({ status: 404, description: 'Not found.' })
+  async remove(@Param('id') id: string): Promise<Record<string, never>> {
+    await this.findOne(id);
+    await this.userService.delete(id);
+    return {};
   }
-
 }
