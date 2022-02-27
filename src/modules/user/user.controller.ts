@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -11,6 +12,7 @@ import {
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './user.schema';
 import { UserService } from './user.service';
+import { isValidObjectId } from 'mongoose';
 
 @Controller('users')
 @ApiTags('users')
@@ -33,6 +35,10 @@ export class UserController {
   @Get(':id')
   @ApiResponse({ status: 404, description: 'Not found.' })
   async findOne(@Param('id') id: string): Promise<User> {
+    if (!isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
     const user = await this.userService.findOne(id);
     if (!user) {
       throw new NotFoundException();
@@ -43,6 +49,9 @@ export class UserController {
   @Put(':id')
   @ApiResponse({ status: 404, description: 'Not found.' })
   async update(@Param('id') id: string, @Body() user: User): Promise<string> {
+    if (!isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID');
+    }
     await this.findOne(id);
     await this.userService.update(id, user);
     return '';
@@ -51,6 +60,9 @@ export class UserController {
   @Delete(':id')
   @ApiResponse({ status: 404, description: 'Not found.' })
   async remove(@Param('id') id: string): Promise<Record<string, never>> {
+    if (!isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID');
+    }
     await this.findOne(id);
     await this.userService.delete(id);
     return {};
